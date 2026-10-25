@@ -88,8 +88,6 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 .toast.show{transform:translate(-50%,0)}
 .toast small{display:block;font-weight:400;opacity:.9;margin-bottom:4px;font-size:12px}
 .seg button{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:10px 6px}
-.tabs button{font-size:11px;padding:11px 0 9px}
-.tabs button span{font-size:20px}
 .fseg{display:flex;gap:6px;margin-bottom:12px}
 .fseg button{flex:1;background:none;border:1px solid var(--line);color:var(--muted);border-radius:12px;padding:10px 6px;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fseg button.on{border-color:var(--accent);color:var(--accent);font-weight:600}
@@ -110,6 +108,11 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 .cs-n{font-size:22px;font-weight:700}
 .cs-num{font-family:ui-monospace,Menlo,monospace;font-size:26px;letter-spacing:2px;word-break:break-all;margin:8px 0}
 .cs-h{color:#777;font-size:13px;margin-top:14px}
+.cal-h{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;color:var(--text);font-size:17px;padding:2px 0}
+.lim-h{display:flex;justify-content:space-between;margin-bottom:8px}
+.bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+.lim-r{margin-top:8px;font-size:16px}
 .hide{display:none}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #intro{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 40%,#4a1d46,#150b1c);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;transition:opacity .8s,transform .8s}
@@ -138,19 +141,8 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 <div class="toast" id="toast" role="status"></div>
 
 <div class="wrap">
-  <section id="tab-notes" class="hide">
-    <h1>📝 Заметки</h1>
-    <div class="card">
-      <div class="row">
-        <input type="text" id="noteIn" placeholder="Что добавить? Например, купить молоко" maxlength="200">
-        <button class="btn" id="addNote">+</button>
-      </div>
-    </div>
-    <div class="card" id="notes"></div>
-  </section>
-
   <section id="tab-profile">
-    <h1>💞 Наш профиль</h1>
+    <h1>💞 Главное</h1>
     <div class="card">
       <div class="av-row">
         <div class="av-box"><button class="av" id="avMe" aria-label="Моё фото"></button><div class="av-l" id="avMeL">Я</div></div>
@@ -171,6 +163,12 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
       </div>
       <div class="sub" id="startHint" style="margin-top:6px">Укажите дату начала отношений</div>
     </div>
+    <div class="card big" id="cntCard">
+      <div class="num" id="cntNum">0</div>
+      <div class="sub" id="cntLast"></div>
+      <button class="btn" id="cntBtn" style="width:100%;margin-top:12px">половой акт</button>
+      <button class="link" id="cntUndo">отменить последнее</button>
+    </div>
     <div class="card">
       <div style="font-weight:600;margin-bottom:4px">Праздники и даты</div>
       <div id="events"></div>
@@ -184,6 +182,25 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
           <button class="btn" id="addEv">Добавить</button>
         </div>
       </div>
+    </div>
+    <div class="card">
+      <button class="cal-h" id="calToggle"><b>📅 Календарь</b><span id="calArrow">▾</span></button>
+    </div>
+    <div id="calBody" class="hide">
+    <div class="card">
+      <div class="rowc"><button class="nv" id="calPrev" aria-label="Предыдущий месяц">‹</button><b id="calTitle"></b><button class="nv" id="calNext" aria-label="Следующий месяц">›</button></div>
+      <div class="cw"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+      <div class="cg" id="calGrid"></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px" id="dayTitle"></div>
+      <div id="dayList"></div>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="cText" placeholder="Что планируете?" maxlength="80">
+        <input type="time" id="cTime" style="flex:none;width:112px" aria-label="Время">
+      </div>
+      <button class="btn" id="addCal" style="width:100%;margin-top:8px">Добавить на этот день</button>
+    </div>
     </div>
     <div class="card" id="syncCard">
       <div style="font-weight:600;margin-bottom:6px">🔗 Общий доступ</div>
@@ -247,35 +264,19 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     <div class="card" id="wishList"></div>
   </section>
 
-  <section id="tab-cal" class="hide">
-    <h1>📅 Календарь</h1>
-    <div class="card">
-      <div class="rowc"><button class="nv" id="calPrev" aria-label="Предыдущий месяц">‹</button><b id="calTitle"></b><button class="nv" id="calNext" aria-label="Следующий месяц">›</button></div>
-      <div class="cw"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
-      <div class="cg" id="calGrid"></div>
-    </div>
-    <div class="card">
-      <div style="font-weight:600;margin-bottom:6px" id="dayTitle"></div>
-      <div id="dayList"></div>
-      <div class="row" style="margin-top:10px">
-        <input type="text" id="cText" placeholder="Что планируете?" maxlength="80">
-        <input type="time" id="cTime" style="flex:none;width:112px" aria-label="Время">
-      </div>
-      <button class="btn" id="addCal" style="width:100%;margin-top:8px">Добавить на этот день</button>
-    </div>
-  </section>
-
-  <section id="tab-fin" class="hide">
-    <h1>💰 Финансы</h1>
+  <section id="tab-shop" class="hide">
+    <h1>🛒 Покупки</h1>
     <div class="fseg" id="finTop">
       <button data-f="exp" class="on">Траты</button>
       <button data-f="cards">Карты</button>
+      <button data-f="list">Список</button>
     </div>
     <div id="fin-exp">
       <div class="fseg" id="ewSeg">
         <button data-ew="me" class="on" id="ewMe">Мои траты</button>
         <button data-ew="pt" id="ewPt">Её траты</button>
       </div>
+      <div id="limBox"></div>
       <div class="card">
         <div class="row">
           <input type="text" inputmode="decimal" id="exAmt" placeholder="Сумма, ₽" style="max-width:130px">
@@ -283,12 +284,16 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
         </div>
         <button class="btn" id="addEx" style="width:100%;margin-top:8px">Добавить трату</button>
       </div>
-      <div class="card big">
-        <div class="sub" id="exMonthLbl"></div>
-        <div class="num" id="exSum">0 ₽</div>
-        <div class="sub" id="exSub"></div>
-      </div>
       <div class="card" id="exList"></div>
+    </div>
+    <div id="fin-list" class="hide">
+    <div class="card">
+      <div class="row">
+        <input type="text" id="noteIn" placeholder="Что добавить? Например, купить молоко" maxlength="200">
+        <button class="btn" id="addNote">+</button>
+      </div>
+    </div>
+    <div class="card" id="notes"></div>
     </div>
     <div id="fin-cards" class="hide">
       <div id="cardList"></div>
@@ -304,12 +309,10 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 </div>
 
 <nav class="tabs">
-  <button class="on" data-t="profile"><span>💞</span>Профиль</button>
-  <button data-t="cal"><span>📅</span>Календарь</button>
-  <button data-t="notes"><span>📝</span>Заметки</button>
+  <button class="on" data-t="profile"><span>💞</span>Главное</button>
+  <button data-t="shop"><span>🛒</span>Покупки</button>
   <button data-t="recipes"><span>🍳</span>Рецепты</button>
   <button data-t="wish"><span>🎁</span>Хотелки</button>
-  <button data-t="fin"><span>💰</span>Финансы</button>
 </nav>
 
 <script>
@@ -342,11 +345,10 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   document.querySelectorAll('.tabs button').forEach(function(b){
     b.onclick=function(){
       document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b)});
-      ['notes','profile','recipes','wish','cal','fin'].forEach(function(t){$('tab-'+t).classList.toggle('hide',b.dataset.t!==t)});
+      ['profile','shop','recipes','wish'].forEach(function(t){$('tab-'+t).classList.toggle('hide',b.dataset.t!==t)});
       if(b.dataset.t==='wish')renderWish();
-      if(b.dataset.t==='cal')renderCal();
-      if(b.dataset.t==='notes')showToast();
-      if(b.dataset.t==='fin')renderFin();
+      if(b.dataset.t==='shop')renderFin();
+      if(b.dataset.t==='profile')showToast();
       window.scrollTo(0,0);
     };
   });
@@ -620,6 +622,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     }
     $('calGrid').innerHTML=h;
     renderDay();
+    renderCnt();
   }
   $('calGrid').onclick=function(e){var b=e.target.closest('.cd');if(!b)return;cs=b.dataset.d;renderCal()};
   $('calPrev').onclick=function(){cm.setMonth(cm.getMonth()-1);renderCal()};
@@ -635,6 +638,31 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     if(a==='t'){S.cal.forEach(function(c){if(c.id===id)c.done=!c.done})}
     else{S.cal=S.cal.filter(function(c){return c.id!==id})}
     save();renderCal();
+  };
+
+  /* counter + collapsible calendar */
+  function cntList(){return S.cal.filter(function(c){return c.kind==='cnt'}).sort(function(a,b){return (+a.id)-(+b.id)})}
+  function renderCnt(){
+    var l=cntList(),x=l[l.length-1];
+    $('cntNum').textContent=l.length;
+    $('cntLast').textContent=x?('Последний раз: '+x.date.slice(8,10)+'.'+x.date.slice(5,7)+' в '+(x.time||'')+(x.by?' · '+nameOf(x.by):'')):'Пока ни разу';
+    $('cntUndo').classList.toggle('hide',!l.length);
+  }
+  $('cntBtn').onclick=function(){
+    var d=new Date(),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0');
+    S.cal.push({id:String(Date.now()),date:ymd(d),time:hh+':'+mm,text:'половой акт',done:false,by:S.meSet?S.me:'',kind:'cnt'});
+    save();renderCal();
+  };
+  $('cntUndo').onclick=function(){
+    var l=cntList();if(!l.length)return;
+    var id=l[l.length-1].id;
+    S.cal=S.cal.filter(function(c){return c.id!==id});save();renderCal();
+  };
+  $('calToggle').onclick=function(){
+    var b=$('calBody');b.classList.toggle('hide');
+    var open=!b.classList.contains('hide');
+    $('calArrow').textContent=open?'▴':'▾';
+    if(open)renderCal();
   };
 
   /* finance */
@@ -660,16 +688,20 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   function renderFin(){
     $('fin-exp').classList.toggle('hide',fv!=='exp');
     $('fin-cards').classList.toggle('hide',fv!=='cards');
+    $('fin-list').classList.toggle('hide',fv!=='list');
     document.querySelectorAll('#finTop button').forEach(function(b){b.classList.toggle('on',b.dataset.f===fv)});
     document.querySelectorAll('#ewSeg button').forEach(function(b){b.classList.toggle('on',b.dataset.ew===ew)});
     var mn=S.tg&&S.tg[S.me]&&S.tg[S.me].name,pn=S.tg&&S.tg[other()]&&S.tg[other()].name;
     $('ewMe').textContent=mn?'Траты '+mn:'Мои траты';
     $('ewPt').textContent=pn?'Траты '+pn:(S.me==='him'?'Её траты':'Его траты');
     var k=ekey(),l=(S.fin[k]||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date)||(+b.id)-(+a.id)});
-    $('exMonthLbl').textContent='Траты за '+MN[new Date().getMonth()].toLowerCase();
-    $('exSum').textContent=fm(monthSum(k));
-    var a=monthSum(S.me),b=monthSum(other());
-    $('exSub').textContent='Мои '+fm(a)+' · '+nameOf(other())+' '+fm(b)+' · вместе '+fm(a+b);
+    var now=new Date(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),left=dim-now.getDate()+1;
+    function lim(title,limit,spent){
+      var rest=limit-spent,pct=Math.min(100,Math.round(spent/limit*100));
+      return '<div class="card"><div class="lim-h"><b>'+esc(title)+'</b><span>'+fm(limit)+'</span></div><div class="bar"><i style="width:'+pct+'%"></i></div><div class="lim-r">'+(rest>=0?'Осталось <b>'+fm(rest)+'</b>':'Лимит превышен на <b>'+fm(-rest)+'</b>')+'</div><div class="per" style="margin:2px 0 0">Потрачено '+fm(spent)+(rest>0?'. Можно тратить '+fm(Math.floor(rest/left))+' в день (дней до конца месяца: '+left+')':'')+'</div></div>';
+    }
+    var sMe=monthSum(S.me),sPt=monthSum(other());
+    $('limBox').innerHTML=lim('Общий лимит на месяц',25000,sMe+sPt)+lim(ew==='me'?'Мой лимит':'Лимит '+(pn||'партнёра'),12500,monthSum(k));
     $('exList').innerHTML=l.length?l.map(function(e){
       return '<div class="ex" data-id="'+esc(e.id)+'"><span class="a">'+fm(e.amt)+'</span><span class="n">'+(e.note?esc(e.note):'Без описания')+'<small>'+e.date.slice(8,10)+'.'+e.date.slice(5,7)+'</small></span><button class="del" data-x="1" aria-label="Удалить">×</button></div>';
     }).join(''):'<div class="empty">Трат пока нет</div>';
@@ -886,13 +918,14 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     try{var tg=window.Telegram&&window.Telegram.WebApp;if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred('success')}catch(e){}
     setTimeout(function(){el.classList.add('out')},700);
     setTimeout(function(){el.style.display='none'},1600);
+    setTimeout(showToast,1900);
     setSeen();
   }
   $('enter').onclick=hideIntro;
   $('replay').onclick=function(){window.scrollTo(0,0);showIntro()};
 
   renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();renderFin();if(!getCode())syncTg();startSync();
-  if(seen()){$('intro').style.display='none'}else{showIntro()}
+  if(seen()){$('intro').style.display='none';setTimeout(showToast,500)}else{showIntro()}
 })();
 </script>
 </body>

@@ -83,6 +83,7 @@ textarea{resize:vertical;min-height:80px}
 .cd i{position:absolute;bottom:4px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent)}
 .cd.sel i{background:#fff}
 input[type=time]{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit;min-width:0}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:19px;letter-spacing:1px;text-align:center;user-select:text;-webkit-user-select:text;padding:10px;border:1px dashed var(--accent);border-radius:12px;margin:6px 0 10px;word-break:break-all}
 .hide{display:none}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #intro{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 40%,#4a1d46,#150b1c);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;transition:opacity .8s,transform .8s}
@@ -102,7 +103,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 <div id="intro">
   <div class="heart">❤️</div>
   <h2>Мы вдвоём</h2>
-  <p>Ваше маленькое место для важных дат и общих дел</p>
+  <p>Наше место для важных дат и общих дел</p>
   <button class="btn" id="enter">Войти</button>
 </div>
 
@@ -149,6 +150,24 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
         <input type="text" id="evName" placeholder="Название" maxlength="40">
         <input type="date" id="evDate" style="max-width:160px">
         <button class="btn" id="addEv">+</button>
+      </div>
+    </div>
+    <div class="card" id="syncCard">
+      <div style="font-weight:600;margin-bottom:6px">🔗 Общий доступ</div>
+      <div class="per" id="syncSt" style="margin:0 0 10px"></div>
+      <div id="syncOff">
+        <button class="btn" id="syncNew" style="width:100%">Создать общий код</button>
+        <div class="row" style="margin-top:10px">
+          <input type="text" id="syncIn" placeholder="Или введите код партнёра" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="btn" id="syncJoin">Войти</button>
+        </div>
+        <div class="hint" style="margin-top:8px">Данные на этом телефоне заменятся общими. Код знаете только вы двое, никому его не отправляйте.</div>
+      </div>
+      <div id="syncOn" class="hide">
+        <div class="hint">Ваш код пары. Введите его на втором телефоне:</div>
+        <div class="code" id="syncCode"></div>
+        <button class="btn alt" id="syncCopy">Скопировать код</button>
+        <div style="text-align:center"><button class="link" id="syncOut">Отключить на этом телефоне</button></div>
       </div>
     </div>
     <div style="text-align:center"><button class="link" id="replay">Показать заставку снова</button></div>
@@ -237,7 +256,8 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   if(!S.pantry)S.pantry=[];
   if(!S.wish)S.wish={him:[],her:[]};
   if(!S.cal)S.cal=[];
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+  function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+  function save(){persist();schedulePush()}
   function seen(){try{return localStorage.getItem(KEY+'-seen')}catch(e){return null}}
   function setSeen(){try{localStorage.setItem(KEY+'-seen','1')}catch(e){}}
   var $=function(i){return document.getElementById(i)};
@@ -529,6 +549,96 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     save();renderCal();
   };
 
+  /* sync (Supabase) */
+  var SB='https://kapwerhvvyyobyzohfny.supabase.co',SK='sb_publishable_iSsoqimXJShc1LK-Es0Vgw_L9ukKLZQ';
+  var CODEKEY=KEY+'-code',lastStamp='',pushT=null,busy=false,dirty=false,syncTimer=null;
+  function getCode(){try{return localStorage.getItem(CODEKEY)||''}catch(e){return ''}}
+  function setCode(c){try{if(c)localStorage.setItem(CODEKEY,c);else localStorage.removeItem(CODEKEY)}catch(e){}}
+  function norm(s){return String(s).toUpperCase().replace(/[^A-Z0-9]/g,'')}
+  function fmtCode(c){return c.replace(/(.{4})(?=.)/g,'$1-')}
+  function rpc(fn,body){
+    return fetch(SB+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'apikey':SK,'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.text()})
+      .then(function(t){return t?JSON.parse(t):null});
+  }
+  function payload(){var o={};Object.keys(S).forEach(function(k){if(k!=='me')o[k]=S[k]});return o}
+  function setSt(s){
+    var t={ok:'✅ Подключено, данные общие',sync:'⏳ Синхронизация…',err:'⚠️ Нет связи, повторю позже',off:'Не подключено: данные только на этом телефоне'};
+    $('syncSt').textContent=t[s];
+  }
+  function syncUI(){
+    var c=getCode();
+    $('syncOff').classList.toggle('hide',!!c);
+    $('syncOn').classList.toggle('hide',!c);
+    $('syncCode').textContent=c?fmtCode(c):'';
+    if(!c)setSt('off');
+  }
+  function schedulePush(){
+    if(!getCode())return;
+    dirty=true;clearTimeout(pushT);pushT=setTimeout(push,800);
+  }
+  function push(){
+    var c=getCode();if(!c)return;
+    if(busy){pushT=setTimeout(push,800);return}
+    busy=true;setSt('sync');
+    rpc('set_space',{c:c,d:payload()})
+      .then(function(){dirty=false;return rpc('get_space',{c:c})})
+      .then(function(rows){if(rows&&rows[0])lastStamp=rows[0].updated_at;busy=false;setSt('ok')})
+      .catch(function(){busy=false;setSt('err');pushT=setTimeout(push,5000)});
+  }
+  function applyRemote(d){
+    if(!d||typeof d!=='object')return;
+    Object.keys(d).forEach(function(k){if(k!=='me')S[k]=d[k]});
+    if(!S.notes)S.notes=[];
+    if(!S.events)S.events=[];
+    if(!S.recipes)S.recipes=[];
+    if(!S.pantry)S.pantry=[];
+    if(!S.av)S.av={him:'',her:''};
+    if(!S.wish)S.wish={him:[],her:[]};
+    if(!S.cal)S.cal=[];
+    persist();
+    renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();
+  }
+  function pull(){
+    var c=getCode();if(!c||busy||dirty)return;
+    rpc('get_space',{c:c}).then(function(rows){
+      setSt('ok');
+      var row=rows&&rows[0];
+      if(!row||row.updated_at===lastStamp||busy||dirty)return;
+      lastStamp=row.updated_at;applyRemote(row.data);
+    }).catch(function(){setSt('err')});
+  }
+  function startSync(){
+    syncUI();clearInterval(syncTimer);
+    if(!getCode())return;
+    setSt('sync');pull();syncTimer=setInterval(pull,5000);
+  }
+  function newCode(){
+    var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=new Uint8Array(16),s='';
+    (window.crypto||window.msCrypto).getRandomValues(b);
+    for(var i=0;i<16;i++)s+=A[b[i]%32];
+    return s;
+  }
+  $('syncNew').onclick=function(){
+    setCode(newCode());syncUI();push();
+    clearInterval(syncTimer);syncTimer=setInterval(pull,5000);
+  };
+  $('syncJoin').onclick=function(){
+    var c=norm($('syncIn').value);
+    if(c.length<12){$('syncSt').textContent='Код слишком короткий';return}
+    $('syncSt').textContent='Проверяю код…';
+    rpc('get_space',{c:c}).then(function(rows){
+      var row=rows&&rows[0];
+      if(!row){$('syncSt').textContent='Код не найден. Проверьте, что он введён без ошибок';return}
+      setCode(c);lastStamp=row.updated_at;applyRemote(row.data);$('syncIn').value='';startSync();
+    }).catch(function(){$('syncSt').textContent='Нет связи, попробуйте ещё раз'});
+  };
+  $('syncOut').onclick=function(){setCode('');clearInterval(syncTimer);lastStamp='';dirty=false;syncUI()};
+  $('syncCopy').onclick=function(){
+    try{navigator.clipboard.writeText(fmtCode(getCode())).then(function(){$('syncCopy').textContent='Скопировано ✓'},function(){})}catch(e){}
+  };
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)pull()});
+
   /* intro */
   var hearts=['❤️','💖','💗','💕','✨','🌸'];
   function spawn(box,n,fast){
@@ -563,7 +673,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   $('enter').onclick=hideIntro;
   $('replay').onclick=function(){window.scrollTo(0,0);showIntro()};
 
-  renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();
+  renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();startSync();
   if(seen()){$('intro').style.display='none'}else{showIntro()}
 })();
 </script>

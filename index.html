@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мы вдвоём</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#1a1020;--card:#2a1a33;--text:#fbeef5;--muted:#b49ac0;--accent:#ff5c8a;--accent2:#ffb36b;--line:#3d2a48;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#fff3f7;--card:#fff;--text:#3a1f2d;--muted:#8d6b7c;--accent:#e63e72;--accent2:#f08a3c;--line:#f2d3de}}
+:root[data-theme="light"]{--bg:#fff3f7;--card:#fff;--text:#3a1f2d;--muted:#8d6b7c;--accent:#e63e72;--accent2:#f08a3c;--line:#f2d3de}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:520px;margin:0 auto;padding:16px 16px 90px}
+h1{font-size:22px;margin:4px 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px}
+input[type=text],input[type=date]{flex:1;min-width:0;background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit}
+button{font-family:inherit;border:0;cursor:pointer}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:12px;padding:11px 16px;font-size:16px;font-weight:600}
+.link{background:none;color:var(--muted);font-size:13px;text-decoration:underline;padding:8px}
+.note{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line);animation:pop .3s}
+.note:last-child{border:0}
+.note .t{flex:1;word-break:break-word}
+.note.done .t{text-decoration:line-through;color:var(--muted)}
+.chk{width:24px;height:24px;border-radius:50%;border:2px solid var(--accent);background:none;color:#fff;font-size:14px;line-height:1}
+.done .chk{background:var(--accent)}
+.del{background:none;color:var(--muted);font-size:20px}
+.empty{color:var(--muted);text-align:center;padding:18px 0}
+.big{text-align:center}
+.big .num{font-size:34px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.big .sub{color:var(--muted);font-size:14px;margin-top:4px}
+.ev{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border:0}
+.ev .n{flex:1}
+.ev .n small{display:block;color:var(--muted)}
+.ev input{flex:none;width:150px;padding:8px}
+.badge{font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;padding:12px 0 10px;background:none;color:var(--muted);font-size:13px}
+.tabs button span{display:block;font-size:22px}
+.tabs button.on{color:var(--accent)}
+select,textarea{width:100%;background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit}
+select option{background:var(--card);color:var(--text)}
+textarea{resize:vertical;min-height:80px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+.g4 input{width:100%;text-align:center;padding:10px 4px}
+.rc{animation:pop .3s}
+.g5{display:grid;grid-template-columns:1.3fr 1.3fr 1fr 1fr 1fr;gap:6px;margin:8px 0}
+.g5 input{width:100%;text-align:center;padding:10px 2px;font-size:16px}
+.hint{color:var(--muted);font-size:12px;margin:0 0 8px}
+.btn.alt{background:none;color:var(--accent);border:1px solid var(--accent);width:100%}
+.ig{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.igl{color:var(--muted);font-size:13px;margin-bottom:8px;line-height:1.5}
+#ingTot{color:var(--accent);font-size:13px;font-weight:600;margin:10px 0 0}
+.rh{display:flex;align-items:center;justify-content:space-between;font-size:17px}
+.per{color:var(--muted);font-size:13px;margin:2px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600}
+.chip.k{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:0}
+.rt{margin-top:10px;white-space:pre-wrap;word-break:break-word;font-size:15px}
+.av-row{display:flex;align-items:center;justify-content:center;gap:14px}
+.av-box{text-align:center}
+.av{width:96px;height:96px;border-radius:50%;border:3px solid var(--accent);background:var(--line) center/cover no-repeat;font-size:40px;color:var(--text);padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(255,92,138,.15)}
+.av-l{margin-top:6px;font-size:14px;font-weight:600}
+.av-heart{font-size:26px;animation:beat 1.4s infinite}
+.sub-c{text-align:center;color:var(--muted);font-size:12px;margin-top:10px}
+.who{display:flex;gap:8px;margin-top:10px;justify-content:center}
+.who button{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 14px;font-size:14px}
+.who button.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+.seg{display:flex;gap:6px;margin-bottom:12px}
+.seg button{flex:1;background:none;border:1px solid var(--line);color:var(--muted);border-radius:12px;padding:10px 0;font-size:15px}
+.seg button.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+.sn{display:block;color:var(--muted);font-size:13px;word-break:break-word}
+.rowc{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:17px}
+.rowc .nv{background:none;color:var(--accent);font-size:26px;width:40px;height:36px}
+.cw,.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cw span{color:var(--muted);font-size:12px;padding:4px 0}
+.cd{position:relative;background:none;color:var(--text);border-radius:12px;height:40px;font-size:15px}
+.cd.today{border:1px solid var(--accent)}
+.cd.sel{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700}
+.cd i{position:absolute;bottom:4px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent)}
+.cd.sel i{background:#fff}
+input[type=time]{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit;min-width:0}
+.hide{display:none}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#intro{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 40%,#4a1d46,#150b1c);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;transition:opacity .8s,transform .8s}
+#intro.out{opacity:0;transform:scale(1.15);pointer-events:none}
+#intro .heart{font-size:84px;animation:beat 1.2s infinite;filter:drop-shadow(0 0 24px #ff5c8a)}
+#intro h2{font-size:30px;margin:14px 0 6px;opacity:0;animation:rise 1s .5s forwards}
+#intro p{margin:0 24px 26px;color:#e8c8dc;opacity:0;animation:rise 1s 1.2s forwards}
+#intro .btn{opacity:0;animation:rise 1s 2s forwards}
+.fl{position:absolute;bottom:-40px;animation:float linear forwards;opacity:.8;pointer-events:none}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.2)}30%{transform:scale(1)}45%{transform:scale(1.14)}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes float{to{transform:translateY(-110vh) rotate(40deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){#intro *{animation-duration:.01s!important;animation-delay:0s!important}}
+</style>
+</head>
+<body>
+<div id="intro">
+  <div class="heart">❤️</div>
+  <h2>Мы вдвоём</h2>
+  <p>Ваше маленькое место для важных дат и общих дел</p>
+  <button class="btn" id="enter">Войти</button>
+</div>
+
+<div class="wrap">
+  <section id="tab-notes">
+    <h1>📝 Заметки</h1>
+    <div class="card">
+      <div class="row">
+        <input type="text" id="noteIn" placeholder="Что добавить? Например, купить молоко" maxlength="200">
+        <button class="btn" id="addNote">+</button>
+      </div>
+    </div>
+    <div class="card" id="notes"></div>
+  </section>
+
+  <section id="tab-profile" class="hide">
+    <h1>💞 Наш профиль</h1>
+    <div class="card">
+      <div class="av-row">
+        <div class="av-box"><button class="av" id="avMe" aria-label="Моё фото"></button><div class="av-l" id="avMeL">Я</div></div>
+        <div class="av-heart">❤️</div>
+        <div class="av-box"><button class="av" id="avPt" aria-label="Фото партнёра"></button><div class="av-l" id="avPtL"></div></div>
+      </div>
+      <div class="sub-c">Нажмите на круг, чтобы выбрать фото</div>
+      <div class="who"><button data-me="him">Я — он</button><button data-me="her">Я — она</button></div>
+      <input type="file" accept="image/*" id="avFile" class="hide">
+    </div>
+    <div class="card big">
+      <div class="sub">Вместе уже</div>
+      <div class="num" id="dur">—</div>
+      <div class="sub" id="durDays"></div>
+      <div class="row" style="margin-top:12px">
+        <input type="date" id="start" aria-label="Дата начала отношений">
+      </div>
+      <div class="sub" style="margin-top:6px">Укажите дату начала отношений</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:4px">Праздники и даты</div>
+      <div id="events"></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:8px">Добавить свою дату</div>
+      <div class="row">
+        <input type="text" id="evName" placeholder="Название" maxlength="40">
+        <input type="date" id="evDate" style="max-width:160px">
+        <button class="btn" id="addEv">+</button>
+      </div>
+    </div>
+    <div style="text-align:center"><button class="link" id="replay">Показать заставку снова</button></div>
+  </section>
+
+  <section id="tab-recipes" class="hide">
+    <h1>🍳 Рецепты</h1>
+    <div class="card">
+      <input type="text" id="rcName" placeholder="Название блюда" maxlength="60" style="width:100%">
+      <div style="font-weight:600;margin:12px 0 6px">Ингредиенты в сыром виде</div>
+      <div id="ingList"></div>
+      <input type="text" id="igName" list="pantry" placeholder="Ингредиент, например куриная грудка" maxlength="60" style="width:100%;margin-top:6px" autocomplete="off">
+      <datalist id="pantry"></datalist>
+      <div class="g5">
+        <input type="text" inputmode="decimal" id="igW" placeholder="Вес, г" aria-label="Вес сырого, г">
+        <input type="text" inputmode="decimal" id="igK" placeholder="Ккал" aria-label="Ккал на 100 г">
+        <input type="text" inputmode="decimal" id="igP" placeholder="Б" aria-label="Белки на 100 г">
+        <input type="text" inputmode="decimal" id="igF" placeholder="Ж" aria-label="Жиры на 100 г">
+        <input type="text" inputmode="decimal" id="igC" placeholder="У" aria-label="Углеводы на 100 г">
+      </div>
+      <div class="hint">Ккал, Б, Ж, У ингредиента указывайте на 100 г сырого продукта (с упаковки). Уже вводившиеся ингредиенты подставятся сами</div>
+      <button class="btn alt" id="addIg">+ Добавить ингредиент</button>
+      <div id="ingTot"></div>
+      <textarea id="rcText" placeholder="Способ приготовления (необязательно)" style="margin-top:10px"></textarea>
+      <div class="hint" style="margin-top:6px">Массу готового блюда введёте в карточке рецепта после приготовления</div>
+      <button class="btn" id="addRc" style="width:100%;margin-top:8px">Сохранить рецепт</button>
+    </div>
+    <input type="text" id="rcSearch" placeholder="🔍 Поиск по рецептам" style="width:100%;margin-bottom:12px">
+    <div id="recipes"></div>
+  </section>
+
+  <section id="tab-wish" class="hide">
+    <h1>🎁 Хотелки</h1>
+    <div class="seg">
+      <button data-w="me" class="on">Мои хотелки</button>
+      <button data-w="pt" id="wvPt">Её хотелки</button>
+    </div>
+    <div class="card">
+      <input type="text" id="wName" placeholder="Что хочется или что подарить?" maxlength="80" style="width:100%">
+      <input type="text" id="wNote" placeholder="Заметка или ссылка (необязательно)" maxlength="200" style="width:100%;margin-top:8px">
+      <div class="hint" id="wishHint" style="margin-top:8px"></div>
+      <button class="btn" id="addWish" style="width:100%">Добавить</button>
+    </div>
+    <div class="card" id="wishList"></div>
+  </section>
+
+  <section id="tab-cal" class="hide">
+    <h1>📅 Календарь</h1>
+    <div class="card">
+      <div class="rowc"><button class="nv" id="calPrev" aria-label="Предыдущий месяц">‹</button><b id="calTitle"></b><button class="nv" id="calNext" aria-label="Следующий месяц">›</button></div>
+      <div class="cw"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+      <div class="cg" id="calGrid"></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px" id="dayTitle"></div>
+      <div id="dayList"></div>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="cText" placeholder="Что планируете?" maxlength="80">
+        <input type="time" id="cTime" style="flex:none;width:112px" aria-label="Время">
+      </div>
+      <button class="btn" id="addCal" style="width:100%;margin-top:8px">Добавить на этот день</button>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button class="on" data-t="notes"><span>📝</span>Заметки</button>
+  <button data-t="profile"><span>💞</span>Профиль</button>
+  <button data-t="recipes"><span>🍳</span>Рецепты</button>
+  <button data-t="wish"><span>🎁</span>Хотелки</button>
+  <button data-t="cal"><span>📅</span>Календарь</button>
+</nav>
+
+<script>
+(function(){
+  var KEY='us-app-v1';
+  var S={notes:[],start:'',events:[
+    {id:'b1',name:'День рождения (он)',date:''},
+    {id:'b2',name:'День рождения (она)',date:''},
+    {id:'an',name:'Годовщина',date:''},
+    {id:'f23',name:'23 февраля',date:'02-23',fixed:true},
+    {id:'m8',name:'8 марта',date:'03-08',fixed:true}
+  ]};
+  try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.events)S=p}}catch(e){}
+  if(!S.recipes)S.recipes=[];
+  if(!S.pantry)S.pantry=[];
+  if(!S.wish)S.wish={him:[],her:[]};
+  if(!S.cal)S.cal=[];
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+  function seen(){try{return localStorage.getItem(KEY+'-seen')}catch(e){return null}}
+  function setSeen(){try{localStorage.setItem(KEY+'-seen','1')}catch(e){}}
+  var $=function(i){return document.getElementById(i)};
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  try{var tg=window.Telegram&&window.Telegram.WebApp;if(tg){tg.ready();tg.expand()}}catch(e){}
+
+  /* tabs */
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b)});
+      ['notes','profile','recipes','wish','cal'].forEach(function(t){$('tab-'+t).classList.toggle('hide',b.dataset.t!==t)});
+      if(b.dataset.t==='wish')renderWish();
+      if(b.dataset.t==='cal')renderCal();
+      window.scrollTo(0,0);
+    };
+  });
+
+  /* notes */
+  function renderNotes(){
+    var box=$('notes');
+    if(!S.notes.length){box.innerHTML='<div class="empty">Пока пусто. Добавьте первую заметку ✨</div>';return}
+    box.innerHTML=S.notes.map(function(n){
+      return '<div class="note'+(n.done?' done':'')+'" data-id="'+n.id+'"><button class="chk" data-a="t">'+(n.done?'✓':'')+'</button><span class="t">'+esc(n.text)+'</span><button class="del" data-a="d" aria-label="Удалить">×</button></div>';
+    }).join('');
+  }
+  $('notes').onclick=function(e){
+    var a=e.target.dataset.a;if(!a)return;
+    var id=e.target.closest('.note').dataset.id;
+    if(a==='t'){S.notes.forEach(function(n){if(n.id===id)n.done=!n.done})}
+    else{S.notes=S.notes.filter(function(n){return n.id!==id})}
+    save();renderNotes();
+  };
+  function addNote(){
+    var v=$('noteIn').value.trim();if(!v)return;
+    S.notes.unshift({id:String(Date.now()),text:v,done:false});
+    $('noteIn').value='';save();renderNotes();
+  }
+  $('addNote').onclick=addNote;
+  $('noteIn').onkeydown=function(e){if(e.key==='Enter')addNote()};
+
+  /* profile */
+  function plural(n,f){var m=n%100,k=n%10;return n+' '+(m>10&&m<20?f[2]:k===1?f[0]:k>1&&k<5?f[1]:f[2])}
+  function renderDur(){
+    $('start').value=S.start||'';
+    if(!S.start){$('dur').textContent='—';$('durDays').textContent='';return}
+    var a=new Date(S.start+'T00:00:00'),b=new Date();b.setHours(0,0,0,0);
+    if(a>b){$('dur').textContent='Дата в будущем';$('durDays').textContent='';return}
+    var y=b.getFullYear()-a.getFullYear(),m=b.getMonth()-a.getMonth(),d=b.getDate()-a.getDate();
+    if(d<0){m--;d+=new Date(b.getFullYear(),b.getMonth(),0).getDate()}
+    if(m<0){y--;m+=12}
+    var parts=[];
+    if(y)parts.push(plural(y,['год','года','лет']));
+    if(m)parts.push(plural(m,['месяц','месяца','месяцев']));
+    parts.push(plural(d,['день','дня','дней']));
+    $('dur').textContent=parts.join(' ');
+    $('durDays').textContent='Всего '+plural(Math.round((b-a)/864e5),['день','дня','дней']);
+  }
+  $('start').onchange=function(){S.start=this.value;save();renderDur();renderEvents()};
+
+  function daysLeft(date){
+    if(!date)return null;
+    var p=date.split('-'),mm=+p[p.length-2]-1,dd=+p[p.length-1];
+    var t=new Date();t.setHours(0,0,0,0);
+    var n=new Date(t.getFullYear(),mm,dd);
+    if(n<t)n=new Date(t.getFullYear()+1,mm,dd);
+    return Math.round((n-t)/864e5);
+  }
+  function fmt(date){
+    var p=date.split('-'),mm=+p[p.length-2]-1,dd=+p[p.length-1];
+    return dd+' '+['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'][mm];
+  }
+  function renderEvents(){
+    var list=S.events.map(function(e){
+      var date=e.id==='an'&&S.start&&!e.date?S.start:e.date;
+      return {e:e,date:date,left:daysLeft(date)};
+    });
+    list.sort(function(a,b){return (a.left===null?1e9:a.left)-(b.left===null?1e9:b.left)});
+    $('events').innerHTML=list.map(function(x){
+      var e=x.e,badge=x.left===null?'':(x.left===0?'🎉 Сегодня!':'через '+plural(x.left,['день','дня','дней']));
+      var right=e.fixed?'<span class="badge">'+badge+'</span>':
+        (x.date?'<span class="badge">'+badge+'</span>':'')+'<input type="date" data-id="'+e.id+'" value="'+(e.date||'')+'" aria-label="'+esc(e.name)+'">';
+      var sub=x.date?'<small>'+fmt(x.date)+'</small>':'<small>дата не указана</small>';
+      var rm=(!e.fixed&&e.id.indexOf('c')===0)?'<button class="del" data-del="'+e.id+'" aria-label="Удалить">×</button>':'';
+      return '<div class="ev"><div class="n">'+esc(e.name)+sub+'</div>'+right+rm+'</div>';
+    }).join('');
+  }
+  $('events').onchange=function(e){
+    var id=e.target.dataset.id;if(!id)return;
+    S.events.forEach(function(x){if(x.id===id)x.date=e.target.value});
+    save();renderEvents();
+  };
+  $('events').onclick=function(e){
+    var id=e.target.dataset.del;if(!id)return;
+    S.events=S.events.filter(function(x){return x.id!==id});save();renderEvents();
+  };
+  $('addEv').onclick=function(){
+    var n=$('evName').value.trim(),d=$('evDate').value;if(!n)return;
+    S.events.push({id:'c'+Date.now(),name:n,date:d});
+    $('evName').value='';$('evDate').value='';save();renderEvents();
+  };
+
+  /* recipes */
+  var rq='';
+  function r1(x){return Math.round(x*10)/10}
+  function sumIng(ing){var t={k:0,p:0,f:0,c:0,w:0};ing.forEach(function(i){var m=i.w/100;t.k+=i.k*m;t.p+=i.p*m;t.f+=i.f*m;t.c+=i.c*m;t.w+=i.w});return t}
+  function chips(k,p,f,c){return '<div class="chips"><span class="chip k">'+Math.round(k)+' ккал</span><span class="chip">Б '+r1(p)+'</span><span class="chip">Ж '+r1(f)+'</span><span class="chip">У '+r1(c)+'</span></div>'}
+  function cardHtml(r){
+    var head='<div class="rh"><b>'+esc(r.name)+'</b><button class="del" data-rdel="'+r.id+'" aria-label="Удалить">×</button></div>';
+    var tail=r.text?'<div class="rt">'+esc(r.text)+'</div>':'';
+    if(!r.ing){return '<div class="card rc">'+head+'<div class="per">'+esc(r.per)+'</div>'+chips(r.k,r.p,r.f,r.c)+tail+'</div>'}
+    var t=sumIng(r.ing),res;
+    var list='<div class="igl">'+r.ing.map(function(i){return '<div>'+esc(i.n)+' — '+i.w+' г</div>'}).join('')+'<div>Сырой вес: '+r1(t.w)+' г</div></div>';
+    if(r.cooked>0){var q=100/r.cooked;res='<div class="per">На 100 г готового блюда</div>'+chips(t.k*q,t.p*q,t.f*q,t.c*q)}
+    else{res='<div class="per">Введите массу готового блюда, и я посчитаю КБЖУ на 100 г</div>'}
+    var ck='<input type="text" inputmode="decimal" data-ck="'+r.id+'" value="'+(r.cooked||'')+'" placeholder="Масса готового блюда, г" aria-label="Масса готового блюда, г" style="width:100%;margin-top:10px">';
+    return '<div class="card rc">'+head+list+res+(r.cooked>0?'':'')+ck+tail+'</div>';
+  }
+  function num(v){var n=parseFloat(String(v).replace(',','.'));return isFinite(n)&&n>=0?Math.round(n*10)/10:0}
+  function renderRecipes(){
+    var box=$('recipes');
+    var list=S.recipes.filter(function(r){return !rq||r.name.toLowerCase().indexOf(rq)>-1});
+    if(!list.length){box.innerHTML='<div class="empty card">'+(S.recipes.length?'Ничего не найдено':'Рецептов пока нет. Добавьте первый 🍳')+'</div>';return}
+    box.innerHTML=list.map(cardHtml).join('');
+  }
+  function renderPantry(){$('pantry').innerHTML=S.pantry.map(function(i){return '<option value="'+esc(i.n)+'">'}).join('')}
+  function findPantry(n){n=n.trim().toLowerCase();for(var i=0;i<S.pantry.length;i++){if(S.pantry[i].n.toLowerCase()===n)return S.pantry[i]}return null}
+  $('igName').oninput=function(){
+    var m=findPantry(this.value);if(!m)return;
+    var ids=['igK','igP','igF','igC'];
+    if(ids.some(function(id){return $(id).value}))return;
+    $('igK').value=m.k;$('igP').value=m.p;$('igF').value=m.f;$('igC').value=m.c;
+  };
+  var draft=[];
+  function renderDraft(msg){
+    $('ingList').innerHTML=draft.map(function(i,x){return '<div class="ig"><span>'+esc(i.n)+' · '+i.w+' г</span><button class="del" data-ig="'+x+'" aria-label="Удалить">×</button></div>'}).join('');
+    if(msg){$('ingTot').textContent=msg;return}
+    if(!draft.length){$('ingTot').textContent='';return}
+    var t=sumIng(draft);
+    $('ingTot').textContent='Сырой вес '+r1(t.w)+' г · всего '+Math.round(t.k)+' ккал, Б '+r1(t.p)+', Ж '+r1(t.f)+', У '+r1(t.c);
+  }
+  $('addIg').onclick=function(){
+    var n=$('igName').value.trim(),w=num($('igW').value);
+    if(!n||!w){renderDraft('Укажите название и вес ингредиента');return}
+    var it={n:n,w:w,k:num($('igK').value),p:num($('igP').value),f:num($('igF').value),c:num($('igC').value)};
+    draft.push(it);
+    var ex=findPantry(n);
+    if(ex){ex.k=it.k;ex.p=it.p;ex.f=it.f;ex.c=it.c}else{S.pantry.push({n:n,k:it.k,p:it.p,f:it.f,c:it.c})}
+    save();renderPantry();
+    ['igName','igW','igK','igP','igF','igC'].forEach(function(i){$(i).value=''});
+    renderDraft();$('igName').focus();
+  };
+  $('ingList').onclick=function(e){
+    var x=e.target.dataset.ig;if(x===undefined)return;
+    draft.splice(+x,1);renderDraft();
+  };
+  $('addRc').onclick=function(){
+    var n=$('rcName').value.trim();
+    if(!n){renderDraft('Введите название блюда');return}
+    if(!draft.length){renderDraft('Добавьте хотя бы один ингредиент');return}
+    S.recipes.unshift({id:String(Date.now()),name:n,ing:draft,cooked:0,text:$('rcText').value.trim()});
+    draft=[];$('rcName').value='';$('rcText').value='';
+    renderDraft();save();renderRecipes();
+  };
+  $('recipes').onclick=function(e){
+    var id=e.target.dataset.rdel;if(!id)return;
+    S.recipes=S.recipes.filter(function(r){return r.id!==id});save();renderRecipes();
+  };
+  $('rcSearch').oninput=function(){rq=this.value.trim().toLowerCase();renderRecipes()};
+  $('recipes').onchange=function(e){
+    var id=e.target.dataset.ck;if(!id)return;
+    var v=num(e.target.value);
+    S.recipes.forEach(function(r){if(r.id===id)r.cooked=v});
+    save();renderRecipes();
+  };
+
+  /* avatars */
+  if(!S.av)S.av={him:'',her:''};
+  if(!S.me)S.me='him';
+  var avTarget='him';
+  function other(){return S.me==='him'?'her':'him'}
+  function setAv(el,key){
+    var src=S.av[key];
+    el.style.backgroundImage=src?'url("'+src+'")':'none';
+    el.textContent=src?'':(key==='him'?'👨':'👩');
+  }
+  function renderAv(){
+    setAv($('avMe'),S.me);setAv($('avPt'),other());
+    $('avMeL').textContent=S.me==='him'?'Я (он)':'Я (она)';
+    $('avPtL').textContent=S.me==='him'?'Она':'Он';
+    document.querySelectorAll('.who button').forEach(function(b){b.classList.toggle('on',b.dataset.me===S.me)});
+  }
+  $('avMe').onclick=function(){avTarget=S.me;$('avFile').click()};
+  $('avPt').onclick=function(){avTarget=other();$('avFile').click()};
+  document.querySelectorAll('.who button').forEach(function(b){
+    b.onclick=function(){S.me=b.dataset.me;save();renderAv()};
+  });
+  $('avFile').onchange=function(){
+    var f=this.files&&this.files[0];if(!f)return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var s=Math.min(img.width,img.height),c=document.createElement('canvas');
+        c.width=c.height=256;
+        c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,256,256);
+        S.av[avTarget]=c.toDataURL('image/jpeg',0.85);save();renderAv();
+      };
+      img.src=rd.result;
+    };
+    rd.readAsDataURL(f);
+    this.value='';
+  };
+
+  /* wishes */
+  var wv='me';
+  function wkey(){return wv==='me'?S.me:other()}
+  function renderWish(){
+    var k=wkey();
+    document.querySelectorAll('.seg button').forEach(function(b){b.classList.toggle('on',b.dataset.w===wv)});
+    $('wvPt').textContent=S.me==='him'?'Её хотелки':'Его хотелки';
+    $('wishHint').textContent=wv==='me'?'Что хочу получить. Галочка: уже получено':(S.me==='him'?'Идеи для её подарков. Галочка: уже подарено':'Идеи для его подарков. Галочка: уже подарено');
+    var l=S.wish[k]||[];
+    $('wishList').innerHTML=l.length?l.map(function(w){
+      return '<div class="note'+(w.done?' done':'')+'" data-id="'+w.id+'"><button class="chk" data-a="t">'+(w.done?'✓':'')+'</button><span class="t">'+esc(w.name)+(w.note?'<span class="sn">'+esc(w.note)+'</span>':'')+'</span><button class="del" data-a="d" aria-label="Удалить">×</button></div>';
+    }).join(''):'<div class="empty">Пока пусто. Добавьте первую хотелку ✨</div>';
+  }
+  document.querySelectorAll('.seg button').forEach(function(b){b.onclick=function(){wv=b.dataset.w;renderWish()}});
+  $('addWish').onclick=function(){
+    var n=$('wName').value.trim();if(!n)return;
+    var k=wkey();if(!S.wish[k])S.wish[k]=[];
+    S.wish[k].unshift({id:String(Date.now()),name:n,note:$('wNote').value.trim(),done:false});
+    $('wName').value='';$('wNote').value='';save();renderWish();
+  };
+  $('wishList').onclick=function(e){
+    var a=e.target.dataset.a;if(!a)return;
+    var id=e.target.closest('.note').dataset.id,k=wkey();
+    if(a==='t'){S.wish[k].forEach(function(w){if(w.id===id)w.done=!w.done})}
+    else{S.wish[k]=S.wish[k].filter(function(w){return w.id!==id})}
+    save();renderWish();
+  };
+
+  /* calendar */
+  var MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var MG=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+  var cm=new Date();cm.setDate(1);cm.setHours(0,0,0,0);
+  var cs=ymd(new Date());
+  function holidaysOn(ds){
+    var md=ds.slice(5);
+    return S.events.filter(function(e){var d=(e.id==='an'&&S.start&&!e.date)?S.start:e.date;return d&&d.slice(-5)===md});
+  }
+  function renderDay(){
+    var p=cs.split('-');
+    $('dayTitle').textContent=(+p[2])+' '+MG[+p[1]-1];
+    var hs=holidaysOn(cs).map(function(e){return '<div class="note"><span class="t">🎉 '+esc(e.name)+'</span></div>'});
+    var items=S.cal.filter(function(c){return c.date===cs}).sort(function(a,b){return (a.time||'99').localeCompare(b.time||'99')});
+    var rows=items.map(function(c){return '<div class="note'+(c.done?' done':'')+'" data-id="'+c.id+'"><button class="chk" data-a="t">'+(c.done?'✓':'')+'</button><span class="t">'+(c.time?'<b>'+esc(c.time)+'</b> ':'')+esc(c.text)+'</span><button class="del" data-a="d" aria-label="Удалить">×</button></div>'});
+    var all=hs.concat(rows);
+    $('dayList').innerHTML=all.length?all.join(''):'<div class="empty">На этот день ничего нет</div>';
+  }
+  function renderCal(){
+    $('calTitle').textContent=MN[cm.getMonth()]+' '+cm.getFullYear();
+    var off=(new Date(cm.getFullYear(),cm.getMonth(),1).getDay()+6)%7;
+    var dim=new Date(cm.getFullYear(),cm.getMonth()+1,0).getDate();
+    var today=ymd(new Date()),h='';
+    for(var i=0;i<off;i++)h+='<div></div>';
+    for(var d=1;d<=dim;d++){
+      var ds=ymd(new Date(cm.getFullYear(),cm.getMonth(),d));
+      var has=S.cal.some(function(c){return c.date===ds})||holidaysOn(ds).length>0;
+      h+='<button class="cd'+(ds===today?' today':'')+(ds===cs?' sel':'')+'" data-d="'+ds+'">'+d+(has?'<i></i>':'')+'</button>';
+    }
+    $('calGrid').innerHTML=h;
+    renderDay();
+  }
+  $('calGrid').onclick=function(e){var b=e.target.closest('.cd');if(!b)return;cs=b.dataset.d;renderCal()};
+  $('calPrev').onclick=function(){cm.setMonth(cm.getMonth()-1);renderCal()};
+  $('calNext').onclick=function(){cm.setMonth(cm.getMonth()+1);renderCal()};
+  $('addCal').onclick=function(){
+    var t=$('cText').value.trim();if(!t)return;
+    S.cal.push({id:String(Date.now()),date:cs,time:$('cTime').value,text:t,done:false});
+    $('cText').value='';$('cTime').value='';save();renderCal();
+  };
+  $('dayList').onclick=function(e){
+    var a=e.target.dataset.a;if(!a)return;
+    var id=e.target.closest('.note').dataset.id;
+    if(a==='t'){S.cal.forEach(function(c){if(c.id===id)c.done=!c.done})}
+    else{S.cal=S.cal.filter(function(c){return c.id!==id})}
+    save();renderCal();
+  };
+
+  /* intro */
+  var hearts=['❤️','💖','💗','💕','✨','🌸'];
+  function spawn(box,n,fast){
+    for(var i=0;i<n;i++){
+      var s=document.createElement('span');
+      s.className='fl';s.textContent=hearts[Math.floor(Math.random()*hearts.length)];
+      s.style.left=Math.random()*100+'%';
+      s.style.fontSize=(14+Math.random()*30)+'px';
+      s.style.animationDuration=((fast?2:5)+Math.random()*(fast?2:5))+'s';
+      s.style.animationDelay=(Math.random()*(fast?.4:4))+'s';
+      box.appendChild(s);
+      setTimeout(function(el){return function(){el.remove()}}(s),12000);
+    }
+  }
+  var introTimer;
+  function showIntro(){
+    var el=$('intro');el.classList.remove('out');el.style.display='flex';
+    spawn(el,28,false);
+    clearInterval(introTimer);
+    introTimer=setInterval(function(){spawn(el,6,false)},3500);
+  }
+  function hideIntro(){
+    var el=$('intro');
+    clearInterval(introTimer);
+    spawn(el,40,true);
+    try{if(navigator.vibrate)navigator.vibrate(30)}catch(e){}
+    try{var tg=window.Telegram&&window.Telegram.WebApp;if(tg&&tg.HapticFeedback)tg.HapticFeedback.notificationOccurred('success')}catch(e){}
+    setTimeout(function(){el.classList.add('out')},700);
+    setTimeout(function(){el.style.display='none'},1600);
+    setSeen();
+  }
+  $('enter').onclick=hideIntro;
+  $('replay').onclick=function(){window.scrollTo(0,0);showIntro()};
+
+  renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();
+  if(seen()){$('intro').style.display='none'}else{showIntro()}
+})();
+</script>
+</body>
+</html>

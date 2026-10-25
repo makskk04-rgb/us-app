@@ -84,6 +84,10 @@ textarea{resize:vertical;min-height:80px}
 .cd.sel i{background:#fff}
 input[type=time]{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit;min-width:0}
 .code{font-family:ui-monospace,Menlo,monospace;font-size:19px;letter-spacing:1px;text-align:center;user-select:text;-webkit-user-select:text;padding:10px;border:1px dashed var(--accent);border-radius:12px;margin:6px 0 10px;word-break:break-all}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translate(-50%,-160%);width:min(92%,440px);z-index:40;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.3);font-size:16px;font-weight:600;text-align:center;transition:transform .45s cubic-bezier(.2,.9,.3,1.2)}
+.toast.show{transform:translate(-50%,0)}
+.toast small{display:block;font-weight:400;opacity:.9;margin-bottom:4px;font-size:12px}
+.seg button{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:10px 6px}
 .hide{display:none}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #intro{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 40%,#4a1d46,#150b1c);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;transition:opacity .8s,transform .8s}
@@ -107,8 +111,10 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   <button class="btn" id="enter">Войти</button>
 </div>
 
+<div class="toast" id="toast" role="status"></div>
+
 <div class="wrap">
-  <section id="tab-notes">
+  <section id="tab-notes" class="hide">
     <h1>📝 Заметки</h1>
     <div class="card">
       <div class="row">
@@ -119,7 +125,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     <div class="card" id="notes"></div>
   </section>
 
-  <section id="tab-profile" class="hide">
+  <section id="tab-profile">
     <h1>💞 Наш профиль</h1>
     <div class="card">
       <div class="av-row">
@@ -127,8 +133,9 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
         <div class="av-heart">❤️</div>
         <div class="av-box"><button class="av" id="avPt" aria-label="Фото партнёра"></button><div class="av-l" id="avPtL"></div></div>
       </div>
-      <div class="sub-c">Нажмите на круг, чтобы выбрать фото</div>
+      <div class="sub-c">Фото берётся из Telegram. Нажмите на круг, чтобы выбрать другое</div>
       <div class="who"><button data-me="him">Я — он</button><button data-me="her">Я — она</button></div>
+      <div class="hint" id="whoHint" style="text-align:center;margin:8px 0 0"></div>
       <input type="file" accept="image/*" id="avFile" class="hide">
     </div>
     <div class="card big">
@@ -145,11 +152,13 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
       <div id="events"></div>
     </div>
     <div class="card">
-      <div style="font-weight:600;margin-bottom:8px">Добавить свою дату</div>
-      <div class="row">
-        <input type="text" id="evName" placeholder="Название" maxlength="40">
-        <input type="date" id="evDate" style="max-width:160px">
-        <button class="btn" id="addEv">+</button>
+      <button class="btn alt" id="evOpen">＋ Добавить свою дату</button>
+      <div id="evForm" class="hide" style="margin-top:10px">
+        <input type="date" id="evDate" style="width:100%" aria-label="Дата">
+        <div class="row" style="margin-top:8px">
+          <input type="text" id="evName" placeholder="Название" maxlength="40">
+          <button class="btn" id="addEv">Добавить</button>
+        </div>
       </div>
     </div>
     <div class="card" id="syncCard">
@@ -202,7 +211,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   <section id="tab-wish" class="hide">
     <h1>🎁 Хотелки</h1>
     <div class="seg">
-      <button data-w="me" class="on">Мои хотелки</button>
+      <button data-w="me" class="on" id="wvMe">Мои хотелки</button>
       <button data-w="pt" id="wvPt">Её хотелки</button>
     </div>
     <div class="card">
@@ -234,11 +243,11 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 </div>
 
 <nav class="tabs">
-  <button class="on" data-t="notes"><span>📝</span>Заметки</button>
-  <button data-t="profile"><span>💞</span>Профиль</button>
+  <button class="on" data-t="profile"><span>💞</span>Профиль</button>
+  <button data-t="cal"><span>📅</span>Календарь</button>
+  <button data-t="notes"><span>📝</span>Заметки</button>
   <button data-t="recipes"><span>🍳</span>Рецепты</button>
   <button data-t="wish"><span>🎁</span>Хотелки</button>
-  <button data-t="cal"><span>📅</span>Календарь</button>
 </nav>
 
 <script>
@@ -247,15 +256,15 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   var S={notes:[],start:'',events:[
     {id:'b1',name:'День рождения (он)',date:''},
     {id:'b2',name:'День рождения (она)',date:''},
-    {id:'an',name:'Годовщина',date:''},
-    {id:'f23',name:'23 февраля',date:'02-23',fixed:true},
-    {id:'m8',name:'8 марта',date:'03-08',fixed:true}
+    {id:'an',name:'Годовщина',date:''}
   ]};
   try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.events)S=p}}catch(e){}
   if(!S.recipes)S.recipes=[];
   if(!S.pantry)S.pantry=[];
   if(!S.wish)S.wish={him:[],her:[]};
   if(!S.cal)S.cal=[];
+  if(!S.tg)S.tg={};
+  cleanEv();
   function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
   function save(){persist();schedulePush()}
   function seen(){try{return localStorage.getItem(KEY+'-seen')}catch(e){return null}}
@@ -272,6 +281,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
       ['notes','profile','recipes','wish','cal'].forEach(function(t){$('tab-'+t).classList.toggle('hide',b.dataset.t!==t)});
       if(b.dataset.t==='wish')renderWish();
       if(b.dataset.t==='cal')renderCal();
+      if(b.dataset.t==='notes')showToast();
       window.scrollTo(0,0);
     };
   });
@@ -314,7 +324,9 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     if(m)parts.push(plural(m,['месяц','месяца','месяцев']));
     parts.push(plural(d,['день','дня','дней']));
     $('dur').textContent=parts.join(' ');
-    $('durDays').textContent='Всего '+plural(Math.round((b-a)/864e5),['день','дня','дней']);
+    var tot=Math.round((b-a)/864e5),dd=plural(tot,['день','дня','дней']);
+    var caps=['Всего '+dd,'Уже '+dd+' вместе',dd+' счастья на двоих','Прошло '+dd+' с начала нашей истории',dd+' рядом друг с другом','Целых '+dd+' любви',dd+' вместе, и это только начало ✨'];
+    $('durDays').textContent=caps[tot%caps.length];
   }
   $('start').onchange=function(){S.start=this.value;save();renderDur();renderEvents()};
 
@@ -357,7 +369,11 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   $('addEv').onclick=function(){
     var n=$('evName').value.trim(),d=$('evDate').value;if(!n)return;
     S.events.push({id:'c'+Date.now(),name:n,date:d});
-    $('evName').value='';$('evDate').value='';save();renderEvents();
+    $('evName').value='';$('evDate').value='';$('evForm').classList.add('hide');save();renderEvents();
+  };
+  $('evOpen').onclick=function(){
+    var f=$('evForm');f.classList.toggle('hide');
+    if(!f.classList.contains('hide')){try{var d=$('evDate');if(d.showPicker)d.showPicker()}catch(e){}}
   };
 
   /* recipes */
@@ -440,20 +456,24 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   var avTarget='him';
   function other(){return S.me==='him'?'her':'him'}
   function setAv(el,key){
-    var src=S.av[key];
+    var src=S.av[key]||(S.tg&&S.tg[key]&&S.tg[key].photo)||'';
+    var emo=key==='him'?'👨':'👩';
+    if(src&&src.indexOf('data:')!==0){var im=new Image();im.onerror=function(){el.style.backgroundImage='none';el.textContent=emo};im.src=src}
     el.style.backgroundImage=src?'url("'+src+'")':'none';
     el.textContent=src?'':(key==='him'?'👨':'👩');
   }
   function renderAv(){
     setAv($('avMe'),S.me);setAv($('avPt'),other());
-    $('avMeL').textContent=S.me==='him'?'Я (он)':'Я (она)';
-    $('avPtL').textContent=S.me==='him'?'Она':'Он';
-    document.querySelectorAll('.who button').forEach(function(b){b.classList.toggle('on',b.dataset.me===S.me)});
+    var mt=S.tg&&S.tg[S.me]&&S.tg[S.me].name,pt=S.tg&&S.tg[other()]&&S.tg[other()].name;
+    $('avMeL').textContent=mt||(S.me==='him'?'Я (он)':'Я (она)');
+    $('avPtL').textContent=pt||(S.me==='him'?'Она':'Он');
+    $('whoHint').textContent=S.meSet?'':'Выберите, кто вы: от этого зависят имена и аватарки';
+    document.querySelectorAll('.who button').forEach(function(b){b.classList.toggle('on',!!S.meSet&&b.dataset.me===S.me)});
   }
   $('avMe').onclick=function(){avTarget=S.me;$('avFile').click()};
   $('avPt').onclick=function(){avTarget=other();$('avFile').click()};
   document.querySelectorAll('.who button').forEach(function(b){
-    b.onclick=function(){S.me=b.dataset.me;save();renderAv()};
+    b.onclick=function(){S.me=b.dataset.me;S.meSet=true;save();syncTg();renderAv();renderWish();renderCal()};
   });
   $('avFile').onchange=function(){
     var f=this.files&&this.files[0];if(!f)return;
@@ -478,7 +498,9 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   function renderWish(){
     var k=wkey();
     document.querySelectorAll('.seg button').forEach(function(b){b.classList.toggle('on',b.dataset.w===wv)});
-    $('wvPt').textContent=S.me==='him'?'Её хотелки':'Его хотелки';
+    var mn=S.tg&&S.tg[S.me]&&S.tg[S.me].name,pn=S.tg&&S.tg[other()]&&S.tg[other()].name;
+    $('wvMe').textContent=mn?'Хотелки '+mn:'Мои хотелки';
+    $('wvPt').textContent=pn?'Хотелки '+pn:(S.me==='him'?'Её хотелки':'Его хотелки');
     $('wishHint').textContent=wv==='me'?'Что хочу получить. Галочка: уже получено':(S.me==='him'?'Идеи для её подарков. Галочка: уже подарено':'Идеи для его подарков. Галочка: уже подарено');
     var l=S.wish[k]||[];
     $('wishList').innerHTML=l.length?l.map(function(w){
@@ -515,7 +537,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     $('dayTitle').textContent=(+p[2])+' '+MG[+p[1]-1];
     var hs=holidaysOn(cs).map(function(e){return '<div class="note"><span class="t">🎉 '+esc(e.name)+'</span></div>'});
     var items=S.cal.filter(function(c){return c.date===cs}).sort(function(a,b){return (a.time||'99').localeCompare(b.time||'99')});
-    var rows=items.map(function(c){return '<div class="note'+(c.done?' done':'')+'" data-id="'+c.id+'"><button class="chk" data-a="t">'+(c.done?'✓':'')+'</button><span class="t">'+(c.time?'<b>'+esc(c.time)+'</b> ':'')+esc(c.text)+'</span><button class="del" data-a="d" aria-label="Удалить">×</button></div>'});
+    var rows=items.map(function(c){return '<div class="note'+(c.done?' done':'')+'" data-id="'+c.id+'"><button class="chk" data-a="t">'+(c.done?'✓':'')+'</button><span class="t">'+(c.time?'<b>'+esc(c.time)+'</b> ':'')+esc(c.text)+(c.by?'<span class="sn">'+esc(nameOf(c.by))+'</span>':'')+'</span><button class="del" data-a="d" aria-label="Удалить">×</button></div>'});
     var all=hs.concat(rows);
     $('dayList').innerHTML=all.length?all.join(''):'<div class="empty">На этот день ничего нет</div>';
   }
@@ -538,7 +560,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   $('calNext').onclick=function(){cm.setMonth(cm.getMonth()+1);renderCal()};
   $('addCal').onclick=function(){
     var t=$('cText').value.trim();if(!t)return;
-    S.cal.push({id:String(Date.now()),date:cs,time:$('cTime').value,text:t,done:false});
+    S.cal.push({id:String(Date.now()),date:cs,time:$('cTime').value,text:t,done:false,by:S.meSet?S.me:''});
     $('cText').value='';$('cTime').value='';save();renderCal();
   };
   $('dayList').onclick=function(e){
@@ -548,6 +570,31 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     else{S.cal=S.cal.filter(function(c){return c.id!==id})}
     save();renderCal();
   };
+
+  /* telegram user, names, compliments */
+  var TG=null;
+  try{var tw=window.Telegram&&window.Telegram.WebApp;if(tw&&tw.initDataUnsafe&&tw.initDataUnsafe.user)TG=tw.initDataUnsafe.user}catch(e){}
+  function cleanEv(){S.events=S.events.filter(function(e){return e.id!=='f23'&&e.id!=='m8'})}
+  function nameOf(k){var t=S.tg&&S.tg[k];return (t&&t.name)||(k==='him'?'Он':'Она')}
+  function syncTg(){
+    if(!TG||!S.meSet)return;
+    if(!S.tg)S.tg={};
+    var id=String(TG.id),info={id:id,name:TG.username||TG.first_name||'',photo:TG.photo_url||''};
+    var cur=S.tg[S.me],ch=!cur||cur.id!==info.id||cur.name!==info.name||cur.photo!==info.photo;
+    var o=other();
+    if(S.tg[o]&&S.tg[o].id===id){delete S.tg[o];ch=true}
+    if(ch){S.tg[S.me]=info;save();renderAv();renderWish();renderCal()}
+  }
+  var COMP=['Ты удивительная','Ты самая красивая','Ты невероятно милая','Ты сводишь меня с ума, и мне это нравится','Ты очень сексуальная','Твоя улыбка делает любой день лучше','Ты умная, и это безумно притягивает','С тобой мне спокойно и радостно','Ты моё любимое чудо','Ты лучшее, что со мной случилось','Ты очаровательна, даже когда просто молчишь','Ты вдохновляешь меня становиться лучше','У тебя самый красивый смех','Ты умеешь делать любой день особенным','Ты сильная, и я тобой горжусь','Рядом с тобой мне хорошо как нигде','Ты такая нежная и тёплая','Ты безумно привлекательна','Мне нравится в тебе всё','Ты мой самый любимый человек','У тебя невероятно красивые глаза','Ты талантлива во всём, за что берёшься','Ты добрая, и это делает тебя ещё красивее','Ты умеешь удивлять, и я это обожаю','Ты потрясающе выглядишь','Ты моя любимая причина улыбаться','С тобой даже обычные вещи становятся особенными','Ты заботливая, и я это очень ценю','Ты просто космос','Твои объятия — моё любимое место','Ты покоряешь меня каждый день заново','Ты красивая и снаружи, и внутри','Ты моя радость и моё вдохновение','Ты прекрасна, когда просто остаёшься собой'];
+  var toastT=null;
+  function dayNum(){var d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/864e5)}
+  function showToast(){
+    var el=$('toast');
+    el.innerHTML='<small>💌 Комплимент дня</small>'+esc(COMP[dayNum()%COMP.length]);
+    el.classList.add('show');
+    clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show')},5500);
+  }
+  $('toast').onclick=function(){this.classList.remove('show')};
 
   /* sync (Supabase) */
   var SB='https://kapwerhvvyyobyzohfny.supabase.co',SK='sb_publishable_iSsoqimXJShc1LK-Es0Vgw_L9ukKLZQ';
@@ -561,7 +608,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
       .then(function(r){if(!r.ok)throw new Error('http '+r.status);return r.text()})
       .then(function(t){return t?JSON.parse(t):null});
   }
-  function payload(){var o={};Object.keys(S).forEach(function(k){if(k!=='me')o[k]=S[k]});return o}
+  function payload(){var o={};Object.keys(S).forEach(function(k){if(k!=='me'&&k!=='meSet')o[k]=S[k]});return o}
   function setSt(s){
     var t={ok:'✅ Подключено, данные общие',sync:'⏳ Синхронизация…',err:'⚠️ Нет связи, повторю позже',off:'Не подключено: данные только на этом телефоне'};
     $('syncSt').textContent=t[s];
@@ -588,7 +635,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   }
   function applyRemote(d){
     if(!d||typeof d!=='object')return;
-    Object.keys(d).forEach(function(k){if(k!=='me')S[k]=d[k]});
+    Object.keys(d).forEach(function(k){if(k!=='me'&&k!=='meSet')S[k]=d[k]});
     if(!S.notes)S.notes=[];
     if(!S.events)S.events=[];
     if(!S.recipes)S.recipes=[];
@@ -596,8 +643,11 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     if(!S.av)S.av={him:'',her:''};
     if(!S.wish)S.wish={him:[],her:[]};
     if(!S.cal)S.cal=[];
+    if(!S.tg)S.tg={};
+    cleanEv();
     persist();
     renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();
+    syncTg();
   }
   function pull(){
     var c=getCode();if(!c||busy||dirty)return;
@@ -673,7 +723,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   $('enter').onclick=hideIntro;
   $('replay').onclick=function(){window.scrollTo(0,0);showIntro()};
 
-  renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();startSync();
+  renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();if(!getCode())syncTg();startSync();
   if(seen()){$('intro').style.display='none'}else{showIntro()}
 })();
 </script>

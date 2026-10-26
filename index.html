@@ -113,6 +113,11 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 .bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent))}
 .lim-r{margin-top:8px;font-size:16px}
+.msgs{max-height:230px;overflow-y:auto}
+.msg{margin:6px 0;padding:8px 12px;border-radius:14px;background:var(--line);max-width:88%;word-break:break-word}
+.msg.me{margin-left:auto;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.msg small{display:block;opacity:.7;font-size:11px;margin-bottom:2px}
+.chip.q{background:none;color:var(--text);cursor:pointer;font-size:14px;font-weight:500}
 .hide{display:none}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #intro{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 40%,#4a1d46,#150b1c);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden;transition:opacity .8s,transform .8s}
@@ -169,6 +174,15 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
       <button class="btn" id="cntBtn" style="width:100%;margin-top:12px">половой акт</button>
       <button class="link" id="cntUndo">отменить последнее</button>
     </div>
+    <div class="card" id="chatCard">
+      <div style="font-weight:600;margin-bottom:6px">💬 Сообщения</div>
+      <div id="msgBox" class="msgs"></div>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="msgIn" placeholder="Написать партнёру…" maxlength="200">
+        <button class="btn" id="msgSend">➤</button>
+      </div>
+      <div class="hint" id="ntfHint" style="margin-top:6px"></div>
+    </div>
     <div class="card">
       <div style="font-weight:600;margin-bottom:4px">Праздники и даты</div>
       <div id="events"></div>
@@ -223,8 +237,13 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     <div style="text-align:center"><button class="link" id="replay">Показать заставку снова</button></div>
   </section>
 
-  <section id="tab-recipes" class="hide">
-    <h1>🍳 Рецепты</h1>
+  <section id="tab-home" class="hide">
+    <h1>🏠 Дом</h1>
+    <div class="fseg" id="homeTop">
+      <button data-hm="rec" class="on">Рецепты</button>
+      <button data-hm="chores">Домашние дела</button>
+    </div>
+    <div id="home-rec">
     <div class="card">
       <input type="text" id="rcName" placeholder="Название блюда" maxlength="60" style="width:100%">
       <div style="font-weight:600;margin:12px 0 6px">Ингредиенты в сыром виде</div>
@@ -247,6 +266,17 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     </div>
     <input type="text" id="rcSearch" placeholder="🔍 Поиск по рецептам" style="width:100%;margin-bottom:12px">
     <div id="recipes"></div>
+    </div>
+    <div id="home-chores" class="hide">
+      <div class="card">
+        <div class="row">
+          <input type="text" id="chText" placeholder="Какое дело записать?" maxlength="120">
+          <button class="btn" id="chAdd">＋</button>
+        </div>
+        <div class="chips" id="chQuick" style="margin-top:10px"></div>
+      </div>
+      <div class="card" id="chList"></div>
+    </div>
   </section>
 
   <section id="tab-wish" class="hide">
@@ -311,7 +341,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
 <nav class="tabs">
   <button class="on" data-t="profile"><span>💞</span>Главное</button>
   <button data-t="shop"><span>🛒</span>Покупки</button>
-  <button data-t="recipes"><span>🍳</span>Рецепты</button>
+  <button data-t="home"><span>🏠</span>Дом</button>
   <button data-t="wish"><span>🎁</span>Хотелки</button>
 </nav>
 
@@ -330,6 +360,8 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   if(!S.cal)S.cal=[];
   if(!S.tg)S.tg={};
   if(!S.fin)S.fin={him:[],her:[]};
+  if(!S.chores)S.chores=[];
+  if(!S.msgs)S.msgs=[];
   ensureCards();
   cleanEv();
   function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -345,9 +377,10 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   document.querySelectorAll('.tabs button').forEach(function(b){
     b.onclick=function(){
       document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b)});
-      ['profile','shop','recipes','wish'].forEach(function(t){$('tab-'+t).classList.toggle('hide',b.dataset.t!==t)});
+      ['profile','shop','home','wish'].forEach(function(t){$('tab-'+t).classList.toggle('hide',b.dataset.t!==t)});
       if(b.dataset.t==='wish')renderWish();
       if(b.dataset.t==='shop')renderFin();
+      if(b.dataset.t==='home')renderChores();
       if(b.dataset.t==='profile')showToast();
       window.scrollTo(0,0);
     };
@@ -622,7 +655,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     }
     $('calGrid').innerHTML=h;
     renderDay();
-    renderCnt();
+    renderCnt();renderMsgs();renderChores();
   }
   $('calGrid').onclick=function(e){var b=e.target.closest('.cd');if(!b)return;cs=b.dataset.d;renderCal()};
   $('calPrev').onclick=function(){cm.setMonth(cm.getMonth()-1);renderCal()};
@@ -638,6 +671,96 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     if(a==='t'){S.cal.forEach(function(c){if(c.id===id)c.done=!c.done})}
     else{S.cal=S.cal.filter(function(c){return c.id!==id})}
     save();renderCal();
+  };
+
+  /* messages, chores, notifications via the bot */
+  var TGINIT='';
+  try{TGINIT=(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)||''}catch(e){}
+  var linked=false,linkErr=false,lastLink=0;
+  function tgPost(action,extra){
+    if(!TGINIT)return Promise.resolve(null);
+    var body={action:action,initData:TGINIT};
+    Object.keys(extra||{}).forEach(function(k){body[k]=extra[k]});
+    return fetch(SB+'/functions/v1/tgbot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json()}).catch(function(){return null});
+  }
+  function setNtf(){
+    var t;
+    if(!TGINIT)t='🔕 Уведомления работают только при запуске из Telegram';
+    else if(!getCode())t='🔕 Сначала подключите общий код (блок «Общий доступ» ниже)';
+    else if(linked)t='🔔 Партнёр получит уведомление в Telegram';
+    else if(linkErr)t='⚠️ Бот пока не подключён, уведомления не отправляются';
+    else t='⏳ Подключаю уведомления…';
+    $('ntfHint').textContent=t;
+  }
+  function linkBot(){
+    var c=getCode();
+    if(!c||!TGINIT||linked||Date.now()-lastLink<60000)return;
+    lastLink=Date.now();
+    tgPost('link',{code:c}).then(function(r){
+      if(r&&r.ok){linked=true;linkErr=false}else{linkErr=true}
+      setNtf();
+    });
+  }
+  function notify(text){
+    if(!getCode()||!TGINIT)return;
+    tgPost('notify',{text:text}).then(function(r){
+      if(r&&!r.ok&&r.error==='nolink'){linked=false;lastLink=0;linkBot()}
+    });
+  }
+  function myName(){return S.meSet?nameOf(S.me):'Кто-то'}
+
+  function hhmm(ts){var d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+  function renderMsgs(){
+    var l=(S.msgs||[]).slice(-5),box=$('msgBox');
+    box.innerHTML=l.length?l.map(function(m){
+      return '<div class="msg'+(m.by&&m.by===S.me?' me':'')+'"><small>'+esc(m.by?nameOf(m.by):'Кто-то')+' · '+hhmm(m.ts)+'</small>'+esc(m.text)+'</div>';
+    }).join(''):'<div class="empty">Сообщений пока нет</div>';
+    box.scrollTop=box.scrollHeight;
+  }
+  function sendMsg(){
+    var t=$('msgIn').value.trim();if(!t)return;
+    S.msgs.push({id:String(Date.now()),by:S.meSet?S.me:'',text:t,ts:Date.now()});
+    S.msgs=S.msgs.slice(-20);
+    $('msgIn').value='';save();renderMsgs();
+    notify('💬 '+myName()+': '+t);
+  }
+  $('msgSend').onclick=sendMsg;
+  $('msgIn').onkeydown=function(e){if(e.key==='Enter')sendMsg()};
+
+  var QUICK=['Вынести мусор','Пропылесосить','Постирать','Запустить стирку','Помыть пол','Протереть стол','Помыть посуду','Приготовить еду'];
+  var hv='rec';
+  function renderHome(){
+    $('home-rec').classList.toggle('hide',hv!=='rec');
+    $('home-chores').classList.toggle('hide',hv!=='chores');
+    document.querySelectorAll('#homeTop button').forEach(function(b){b.classList.toggle('on',b.dataset.hm===hv)});
+  }
+  function renderChores(){
+    renderHome();
+    $('chQuick').innerHTML=QUICK.map(function(q){return '<button class="chip q" data-q="'+esc(q)+'">'+esc(q)+'</button>'}).join('');
+    var l=S.chores||[];
+    $('chList').innerHTML=l.length?l.map(function(c){
+      var who=c.by?nameOf(c.by)+' · ':'';
+      return '<div class="note'+(c.done?' done':'')+'" data-id="'+esc(c.id)+'"><button class="chk" data-a="t">'+(c.done?'✓':'')+'</button><span class="t">'+esc(c.text)+'<span class="sn">'+esc(who+c.date.slice(8,10)+'.'+c.date.slice(5,7))+'</span></span><button class="del" data-a="d" aria-label="Удалить">×</button></div>';
+    }).join(''):'<div class="empty">Дел пока нет</div>';
+  }
+  function addChore(text){
+    text=String(text).trim();if(!text)return;
+    text=text.charAt(0).toUpperCase()+text.slice(1);
+    S.chores.unshift({id:String(Date.now()),text:text,by:S.meSet?S.me:'',date:ymd(new Date()),done:false});
+    save();renderChores();
+    notify('🏠 '+myName()+' записал(а) дело: '+text);
+  }
+  document.querySelectorAll('#homeTop button').forEach(function(b){b.onclick=function(){hv=b.dataset.hm;renderHome()}});
+  $('chAdd').onclick=function(){addChore($('chText').value);$('chText').value=''};
+  $('chText').onkeydown=function(e){if(e.key==='Enter'){addChore(this.value);this.value=''}};
+  $('chQuick').onclick=function(e){var q=e.target.dataset.q;if(q)addChore(q)};
+  $('chList').onclick=function(e){
+    var a=e.target.dataset.a;if(!a)return;
+    var id=e.target.closest('.note').dataset.id;
+    if(a==='t'){S.chores.forEach(function(c){if(c.id===id)c.done=!c.done})}
+    else{S.chores=S.chores.filter(function(c){return c.id!==id})}
+    save();renderChores();
   };
 
   /* counter + collapsible calendar */
@@ -828,7 +951,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     busy=true;setSt('sync');
     rpc('set_space',{c:c,d:payload()})
       .then(function(){dirty=false;return rpc('get_space',{c:c})})
-      .then(function(rows){if(rows&&rows[0])lastStamp=rows[0].updated_at;busy=false;setSt('ok')})
+      .then(function(rows){if(rows&&rows[0])lastStamp=rows[0].updated_at;busy=false;setSt('ok');linkBot()})
       .catch(function(){busy=false;setSt('err');pushT=setTimeout(push,5000)});
   }
   function applyRemote(d){
@@ -843,6 +966,8 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     if(!S.cal)S.cal=[];
     if(!S.tg)S.tg={};
     if(!S.fin)S.fin={him:[],her:[]};
+    if(!S.chores)S.chores=[];
+    if(!S.msgs)S.msgs=[];
     ensureCards();
     cleanEv();
     persist();
@@ -854,6 +979,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     rpc('get_space',{c:c}).then(function(rows){
       setSt('ok');
       var row=rows&&rows[0];
+      if(row)linkBot();
       if(!row||row.updated_at===lastStamp||busy||dirty)return;
       lastStamp=row.updated_at;applyRemote(row.data);
     }).catch(function(){setSt('err')});
@@ -880,10 +1006,10 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
     rpc('get_space',{c:c}).then(function(rows){
       var row=rows&&rows[0];
       if(!row){$('syncSt').textContent='Код не найден. Проверьте, что он введён без ошибок';return}
-      setCode(c);lastStamp=row.updated_at;applyRemote(row.data);$('syncIn').value='';startSync();
+      setCode(c);linked=false;lastLink=0;lastStamp=row.updated_at;applyRemote(row.data);$('syncIn').value='';startSync();
     }).catch(function(){$('syncSt').textContent='Нет связи, попробуйте ещё раз'});
   };
-  $('syncOut').onclick=function(){setCode('');clearInterval(syncTimer);lastStamp='';dirty=false;syncUI()};
+  $('syncOut').onclick=function(){setCode('');clearInterval(syncTimer);lastStamp='';dirty=false;linked=false;syncUI();setNtf()};
   $('syncCopy').onclick=function(){
     try{navigator.clipboard.writeText(fmtCode(getCode())).then(function(){$('syncCopy').textContent='Скопировано ✓'},function(){})}catch(e){}
   };
@@ -924,7 +1050,7 @@ input[type=time]{background:transparent;color:var(--text);border:1px solid var(-
   $('enter').onclick=hideIntro;
   $('replay').onclick=function(){window.scrollTo(0,0);showIntro()};
 
-  renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();renderFin();if(!getCode())syncTg();startSync();
+  renderNotes();renderDur();renderEvents();renderRecipes();renderPantry();renderAv();renderWish();renderCal();renderFin();if(!getCode())syncTg();startSync();setNtf();
   if(seen()){$('intro').style.display='none';setTimeout(showToast,500)}else{showIntro()}
 })();
 </script>
